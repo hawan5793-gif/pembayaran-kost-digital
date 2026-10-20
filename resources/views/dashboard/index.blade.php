@@ -5,8 +5,8 @@
     <!-- Header: Bulan & Judul Kost -->
     <div class="flex items-center justify-between mb-4">
         <div>
-            <span class="text-[11px] font-bold tracking-wider text-neutral-400 uppercase">OKTOBER 2026</span>
-            <h1 class="text-2xl font-black text-neutral-900 tracking-tight">Kost Saya</h1>
+            <span class="text-[11px] font-bold tracking-wider text-neutral-400 uppercase">{{ strtoupper($currentMonthName) }} {{ $currentYear }}</span>
+            <h1 class="text-2xl font-black text-neutral-900 tracking-tight">Yani Kost</h1>
         </div>
         <div class="w-9 h-9 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-sm shadow">
             3

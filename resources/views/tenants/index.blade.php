@@ -20,7 +20,7 @@
             <span class="text-xs font-bold text-neutral-900">{{ $totalCount }} penghuni</span>
         </div>
         <div class="text-xs text-neutral-400">
-            <strong class="text-emerald-600">{{ $lunasCount }} lunas</strong> Â· <strong class="text-rose-600">{{ $belumBayarCount }} belum bayar</strong>
+            <strong class="text-emerald-600">{{ $lunasCount }} lunas</strong> · <strong class="text-rose-600">{{ $belumBayarCount }} belum bayar</strong>
         </div>
     </div>
 
@@ -66,7 +66,7 @@
                     <span class="px-2.5 py-1 text-xs font-semibold rounded-full {{ $t->status === 'lunas' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100' }}">
                         {{ $t->status === 'lunas' ? 'Lunas' : 'Belum bayar' }}
                     </span>
-                    <span class="text-neutral-300 text-sm">â€º</span>
+                    <span class="text-neutral-300 text-sm">›</span>
                 </div>
             </div>
             @endforeach

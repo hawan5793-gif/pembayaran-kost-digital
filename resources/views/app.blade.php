@@ -2,9 +2,9 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Kost Saya Â· Kelola Sewa & Pembayaran Kost</title>
+    <title>Yani Kost · Kelola Sewa & Pembayaran Kost</title>
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,7 +12,7 @@
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Custom Modern Mobile CSS -->
-    <link rel="stylesheet" href="{{ asset('mobile-app.css') }}?v=5">
+    <link rel="stylesheet" href="{{ asset('mobile-app.css') }}?v=11">
 </head>
 <body>
 
@@ -38,7 +38,7 @@
                         </div>
                         <div class="user-meta">
                             <span>{{ $currentMonthName }} {{ $currentYear }}</span>
-                            <h2>Kost Saya <i class="fa-solid fa-circle-check"></i></h2>
+                            <h2>Yani Kost <i class="fa-solid fa-circle-check"></i></h2>
                         </div>
                     </div>
                     <div class="header-actions">
@@ -157,7 +157,7 @@
                             <div class="act-title">{{ $p->tenant->name ?? 'Penghuni' }}</div>
                             <div class="act-sub">
                                 <span><i class="fa-solid fa-door-open"></i> {{ $p->room->number ?? 'Kamar' }}</span>
-                                <span>â€¢</span>
+                                <span>•</span>
                                 <span>{{ \Illuminate\Support\Carbon::parse($p->payment_date)->locale('id')->isoFormat('D MMM') }}</span>
                             </div>
                         </div>
@@ -216,10 +216,10 @@
             <div class="segmented-pills" style="--segment-count: 2">
                 <span class="segmented-indicator" aria-hidden="true"></span>
                 <button type="button" id="btn-seg-all" class="seg-btn active" onclick="filterArrears('all')">
-                    Semua Â· {{ $unpaidCount }}
+                    Semua · {{ $unpaidCount }}
                 </button>
                 <button type="button" id="btn-seg-long" class="seg-btn" onclick="filterArrears('long')">
-                    â‰¥ 3 Bulan Â· {{ $unpaidTenants->where('unpaid_months', '>=', 3)->count() }}
+                    ≥ 3 Bulan · {{ $unpaidTenants->where('unpaid_months', '>=', 3)->count() }}
                 </button>
             </div>
 
@@ -234,7 +234,7 @@
                                 <div>
                                     <div style="font-size: 0.92rem; font-weight: 700; color: var(--text-primary);">{{ $t->name }}</div>
                                     <div style="font-size: 0.72rem; color: var(--text-secondary);">
-                                        {{ $t->room->number ?? 'Kamar' }} Â· Jatuh tempo tgl {{ date('d', strtotime($t->due_date ?? now())) }}
+                                        {{ $t->room->number ?? 'Kamar' }} · Jatuh tempo tgl {{ date('d', strtotime($t->due_date ?? now())) }}
                                     </div>
                                 </div>
                             </div>
@@ -377,7 +377,7 @@
                 </div>
                 <div class="hero-card-footer">
                     <span>Periode {{ $currentMonthName }} {{ $currentYear }}</span>
-                    <strong>Kost Saya</strong>
+                    <strong>Yani Kost</strong>
                 </div>
             </div>
 
@@ -403,7 +403,7 @@
                             <div class="act-title">{{ $p->tenant->name ?? 'Penghuni' }}</div>
                             <div class="act-sub">
                                 <span><i class="fa-solid fa-door-open"></i> {{ $p->room->number ?? 'Kamar' }}</span>
-                                <span>â€¢</span>
+                                <span>•</span>
                                 <span>{{ \Illuminate\Support\Carbon::parse($p->payment_date)->locale('id')->isoFormat('D MMM YYYY') }}</span>
                             </div>
                         </div>
@@ -480,7 +480,7 @@
                         <span style="font-size: 0.72rem; color: var(--text-secondary);">Nominal aktual pembayaran yang diterima</span>
                     </div>
                     <span class="trend-badge" style="background: #f1f5f9; color: var(--primary-navy);">
-                        <i class="fa-solid fa-calendar"></i> {{ $monthlyChart[0]['year'] }}&ndash;{{ $monthlyChart[count($monthlyChart) - 1]['year'] }}
+                        <i class="fa-solid fa-calendar"></i> {{ $monthlyChart[0]['year'] === $monthlyChart[count($monthlyChart) - 1]['year'] ? $monthlyChart[0]['year'] : $monthlyChart[0]['year'] . '-' . $monthlyChart[count($monthlyChart) - 1]['year'] }}
                     </span>
                 </div>
 
@@ -553,7 +553,7 @@
                         </div>
                         <div>
                             <h3 id="displayTenantName" style="font-size: 1.05rem; font-weight: 800; color: var(--primary-navy);">
-                                {{ $tenants->first()?->name ?? 'Pilih / Tambah Penghuni' }} {{ $tenants->first()?->room ? 'Â· ' . $tenants->first()->room->number : '' }}
+                                {{ $tenants->first()?->name ?? 'Pilih / Tambah Penghuni' }} {{ $tenants->first()?->room ? '· ' . $tenants->first()->room->number : '' }}
                             </h3>
                             <span id="displayTenantPrice" style="font-size: 0.78rem; color: var(--text-secondary);">
                                 Tarif Rp {{ number_format($tenants->first()?->price ?? $tenants->first()?->room?->price ?? 0, 0, ',', '.') }}/bulan
@@ -637,7 +637,7 @@
                         </div>
                         <div class="act-info">
                             <div class="act-title">{{ $ut->name }} menunggak sewa</div>
-                            <div class="act-sub">{{ $ut->room->number ?? 'Kamar' }} Â· {{ $ut->unpaid_months }} bulan tertunggak</div>
+                            <div class="act-sub">{{ $ut->room->number ?? 'Kamar' }} · {{ $ut->unpaid_months }} bulan tertunggak</div>
                         </div>
                         <span class="badge-months" style="font-size: 0.65rem;">Tagihan</span>
                     </div>
@@ -657,7 +657,7 @@
                         </div>
                         <div class="act-info">
                             <div class="act-title">{{ $np->tenant->name ?? 'Penghuni' }} lunas sewa</div>
-                            <div class="act-sub">{{ $np->room->number ?? 'Kamar' }} Â· Rp {{ number_format($np->amount, 0, ',', '.') }} ({{ $np->method }})</div>
+                            <div class="act-sub">{{ $np->room->number ?? 'Kamar' }} · Rp {{ number_format($np->amount, 0, ',', '.') }} ({{ $np->method }})</div>
                         </div>
                         <span style="font-size: 0.7rem; color: var(--text-muted);">{{ \Illuminate\Support\Carbon::parse($np->payment_date)->locale('id')->isoFormat('D MMM') }}</span>
                     </div>
@@ -712,7 +712,7 @@
         <div class="ticket-boarding-pass">
             <div class="ticket-header">
                 <div>
-                    <div class="ticket-header-title"><i class="fa-solid fa-building-user"></i> KOST SAYA</div>
+                    <div class="ticket-header-title"><i class="fa-solid fa-building-user"></i> YANI KOST</div>
                     <div style="font-size: 0.7rem; opacity: 0.85;">Kuitansi Resmi Pembayaran Sewa</div>
                 </div>
                 <div class="ticket-code" id="rcptCode">#KS-{{ rand(1000, 9999) }}</div>
@@ -1013,8 +1013,8 @@
             currentWaPhone = '62' + currentWaPhone.substring(1);
         }
 
-        document.getElementById('waTargetTenant').innerText = `${name} (${room}) Â· ${months} Bulan`;
-        const msg = `Halo Kak ${name},\n\nSalam hangat dari pengelola Kost Saya. Mengingatkan pembayaran sewa untuk ${room} telah jatuh tempo dengan tunggakan ${months} bulan sebesar Rp ${Number(totalAmount).toLocaleString('id-ID')}.\n\nMohon konfirmasi jika sudah melakukan pembayaran via transfer atau tunai ya kak. Terima kasih!`;
+        document.getElementById('waTargetTenant').innerText = `${name} (${room}) · ${months} Bulan`;
+        const msg = `Halo Kak ${name},\n\nSalam hangat dari pengelola Yani Kost. Mengingatkan pembayaran sewa untuk kamar ${room} telah jatuh tempo dengan tunggakan ${months} bulan sebesar Rp ${Number(totalAmount).toLocaleString('id-ID')}.\n\nMohon konfirmasi jika sudah melakukan pembayaran via transfer atau tunai ya kak. Terima kasih!`;
 
         document.getElementById('waMessageText').value = msg;
         openModal('modalWhatsApp');
@@ -1088,7 +1088,7 @@
 
     function quickSelectPay(tenantId, name, room, amount, price) {
         document.getElementById('formTenantId').value = tenantId;
-        document.getElementById('displayTenantName').innerText = `${name} Â· ${room}`;
+        document.getElementById('displayTenantName').innerText = `${name} · ${room}`;
         document.getElementById('displayTenantPrice').innerText = `Tarif Rp ${Number(price).toLocaleString('id-ID')}/bulan`;
         document.getElementById('formAmount').value = Number(amount || price).toLocaleString('id-ID');
         document.getElementById('dynamicSuccessNote').innerText = `${name} (${room}) akan ditandai Lunas untuk periode ini.`;

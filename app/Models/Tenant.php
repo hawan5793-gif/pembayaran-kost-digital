@@ -6,7 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class Tenant extends Model
 {
-    protected $fillable = ['room_id', 'price', 'name', 'phone', 'entry_date', 'due_date', 'unpaid_months', 'status'];
+    protected $fillable = ['room_id', 'price', 'name', 'phone', 'entry_date', 'due_date', 'unpaid_months', 'status', 'last_billed_at'];
+
+    protected function casts(): array
+    {
+        return [
+            'entry_date' => 'date',
+            'due_date' => 'date',
+            'last_billed_at' => 'date',
+        ];
+    }
 
     public function room()
     {

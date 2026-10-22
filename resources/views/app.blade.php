@@ -30,7 +30,7 @@
         <!-- VIEW: BERANDA (HOME)                           -->
         <!-- ============================================== -->
         <section id="view-home" class="page-view {{ $initialView === 'home' ? 'active' : '' }}">
-            <header class="navy-header">
+            <header class="navy-header">    
                 <div class="header-top">
                     <div class="user-profile-header">
                         <div class="user-avatar">
@@ -42,6 +42,12 @@
                         </div>
                     </div>
                     <div class="header-actions">
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="header-btn" aria-label="Keluar" title="Keluar">
+                                <i class="fa-solid fa-right-from-bracket"></i>
+                            </button>
+                        </form>
                         <button type="button" class="header-btn" onclick="navigateTo('payment')" aria-label="Catat Pembayaran" style="width: auto; padding: 0 12px; gap: 6px; font-size: 0.8rem; font-weight: 700;">
                             <i class="fa-solid fa-plus"></i> <span>Catat</span>
                         </button>
@@ -115,7 +121,7 @@
 
             <div class="horizontal-scroll-list">
                 @forelse($unpaidTenants as $t)
-                    <div class="arrears-card-mini" onclick="quickSelectPay('{{ $t->id }}', '{{ $t->name }}', '{{ $t->room->number ?? 'Kamar' }}', '{{ $t->unpaid_months * ($t->price ?? $t->room?->price ?? 650000) }}', '{{ $t->price ?? $t->room?->price ?? 650000 }}')">
+                    <div class="arrears-card-mini" onclick="quickSelectPay(@js($t->id), @js($t->name), @js($t->room->number ?? 'Kamar'), @js($t->unpaid_months * ($t->price ?? $t->room?->price ?? 650000)), @js($t->price ?? $t->room?->price ?? 650000))">
                         <div class="mini-card-top">
                             <div class="mini-avatar">
                                 {{ substr($t->name, 0, 1) }}
@@ -149,7 +155,7 @@
 
             <div class="activity-card-list">
                 @forelse($payments->take(3) as $p)
-                    <div class="activity-card" onclick="showReceipt('{{ $p->tenant->name ?? 'Penghuni' }}', '{{ $p->room->number ?? '-' }}', '{{ \Illuminate\Support\Carbon::parse($p->payment_date)->locale('id')->isoFormat('D MMM YYYY') }}', '{{ $p->method }}', '{{ $p->amount }}', '{{ $p->month_period }}')">
+                    <div class="activity-card" onclick="showReceipt(@js($p->tenant->name ?? 'Penghuni'), @js($p->room->number ?? '-'), @js(\Illuminate\Support\Carbon::parse($p->payment_date)->locale('id')->isoFormat('D MMM YYYY')), @js($p->method), @js($p->amount), @js($p->month_period))">
                         <div class="act-avatar success">
                             <i class="fa-solid fa-check"></i>
                         </div>
@@ -258,10 +264,10 @@
                         </div>
 
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                            <button type="button" class="mini-card-btn" style="background: var(--primary-navy); color: #ffffff; border-color: var(--primary-navy);" onclick="openWhatsAppModal('{{ $t->name }}', '{{ $t->phone }}', '{{ $t->room->number ?? 'Kamar' }}', '{{ $t->unpaid_months }}', '{{ $t->unpaid_months * ($t->price ?? $t->room?->price ?? 650000) }}')">
+                            <button type="button" class="mini-card-btn" style="background: var(--primary-navy); color: #ffffff; border-color: var(--primary-navy);" onclick="openWhatsAppModal(@js($t->name), @js($t->phone), @js($t->room->number ?? 'Kamar'), @js($t->unpaid_months), @js($t->unpaid_months * ($t->price ?? $t->room?->price ?? 650000)))">
                                 <i class="fa-brands fa-whatsapp" style="font-size: 0.9rem;"></i> Ingatkan WA
                             </button>
-                            <button type="button" class="mini-card-btn" style="background: var(--primary-navy); color: #ffffff; border-color: var(--primary-navy);" onclick="quickSelectPay('{{ $t->id }}', '{{ $t->name }}', '{{ $t->room->number ?? 'Kamar' }}', '{{ $t->unpaid_months * ($t->price ?? $t->room?->price ?? 650000) }}', '{{ $t->price ?? $t->room?->price ?? 650000 }}')">
+                            <button type="button" class="mini-card-btn" style="background: var(--primary-navy); color: #ffffff; border-color: var(--primary-navy);" onclick="quickSelectPay(@js($t->id), @js($t->name), @js($t->room->number ?? 'Kamar'), @js($t->unpaid_months * ($t->price ?? $t->room?->price ?? 650000)), @js($t->price ?? $t->room?->price ?? 650000))">
                                 <i class="fa-solid fa-receipt"></i> Catat Bayar
                             </button>
                         </div>
@@ -322,7 +328,7 @@
             <!-- Tenant List -->
             <div class="activity-card-list" id="tenantListContainer">
                 @forelse($tenants as $t)
-                    <div class="activity-card tenant-row-item" data-name="{{ strtolower($t->name) }}" data-room="{{ strtolower($t->room->number ?? '') }}" data-status="{{ $t->status }}" onclick="showReceipt('{{ $t->name }}', '{{ $t->room->number ?? 'Kamar' }}', '{{ $t->status === 'lunas' ? $todayDisplay : \Illuminate\Support\Carbon::parse($t->due_date ?? now())->locale('id')->isoFormat('D MMM YYYY') }}', '{{ $t->status === 'lunas' ? 'Lunas' : 'Belum Bayar' }}', '{{ $t->price ?? $t->room?->price ?? 650000 }}', '{{ $currentMonthPeriod }}')">
+                    <div class="activity-card tenant-row-item" data-name="{{ strtolower($t->name) }}" data-room="{{ strtolower($t->room->number ?? '') }}" data-status="{{ $t->status }}" onclick="showReceipt(@js($t->name), @js($t->room->number ?? 'Kamar'), @js($t->status === 'lunas' ? $todayDisplay : \Illuminate\Support\Carbon::parse($t->due_date ?? now())->locale('id')->isoFormat('D MMM YYYY')), @js($t->status === 'lunas' ? 'Lunas' : 'Belum Bayar'), @js($t->price ?? $t->room?->price ?? 650000), @js($currentMonthPeriod))">
                         <div class="act-avatar {{ $t->status === 'lunas' ? 'success' : '' }}" style="{{ $t->status !== 'lunas' ? 'background: var(--red-bg); color: var(--red-danger);' : '' }}">
                             <i class="fa-solid {{ $t->status === 'lunas' ? 'fa-user' : 'fa-user-clock' }}"></i>
                         </div>
@@ -395,7 +401,7 @@
 
             <div class="activity-card-list" id="historyListContainer">
                 @forelse($payments as $p)
-                    <div class="activity-card history-row-item" data-method="{{ $p->method }}" onclick="showReceipt('{{ $p->tenant->name ?? 'Penghuni' }}', '{{ $p->room->number ?? '-' }}', '{{ \Illuminate\Support\Carbon::parse($p->payment_date)->locale('id')->isoFormat('D MMM YYYY') }}', '{{ $p->method }}', '{{ $p->amount }}', '{{ $p->month_period }}')">
+                    <div class="activity-card history-row-item" data-method="{{ $p->method }}" onclick="showReceipt(@js($p->tenant->name ?? 'Penghuni'), @js($p->room->number ?? '-'), @js(\Illuminate\Support\Carbon::parse($p->payment_date)->locale('id')->isoFormat('D MMM YYYY')), @js($p->method), @js($p->amount), @js($p->month_period))">
                         <div class="act-avatar success">
                             <i class="fa-solid fa-receipt"></i>
                         </div>
@@ -531,7 +537,7 @@
             <div style="padding: 0 16px 8px;">
                 <div class="pill-grid" id="quickResultList">
                     @forelse($tenants as $idx => $t)
-                        <div class="pill-option tenant-match-btn {{ $idx === 0 ? 'active' : '' }}" data-name="{{ strtolower($t->name) }}" data-room="{{ strtolower($t->room->number ?? '') }}" onclick="quickSelectPay('{{ $t->id }}', '{{ $t->name }}', '{{ $t->room->number ?? 'Kamar' }}', '{{ ($t->unpaid_months > 0 ? $t->unpaid_months : 1) * ($t->price ?? $t->room?->price ?? 650000) }}', '{{ $t->price ?? $t->room?->price ?? 650000 }}')">
+                        <div class="pill-option tenant-match-btn {{ $idx === 0 ? 'active' : '' }}" data-name="{{ strtolower($t->name) }}" data-room="{{ strtolower($t->room->number ?? '') }}" onclick="quickSelectPay(@js($t->id), @js($t->name), @js($t->room->number ?? 'Kamar'), @js(($t->unpaid_months > 0 ? $t->unpaid_months : 1) * ($t->price ?? $t->room?->price ?? 650000)), @js($t->price ?? $t->room?->price ?? 650000))">
                             <i class="fa-solid fa-user"></i> {{ $t->name }} ({{ $t->room->number ?? 'Kamar' }})
                         </div>
                     @empty
@@ -565,7 +571,7 @@
                         <label><i class="fa-solid fa-calendar-check"></i> Untuk Periode Bulan</label>
                         <div class="pill-grid">
                             @foreach($monthOptions as $monthOption)
-                                <button type="button" class="pill-option month-chip {{ $monthOption === $currentMonthPeriod ? 'active' : '' }}" onclick="selectMonth(this, '{{ $monthOption }}')">{{ $monthOption }}</button>
+                                <button type="button" class="pill-option month-chip {{ $monthOption === $currentMonthPeriod ? 'active' : '' }}" onclick="selectMonth(this, @js($monthOption))">{{ $monthOption }}</button>
                             @endforeach
                         </div>
                         <input type="hidden" id="formMonthPeriod" value="{{ $currentMonthPeriod }}">

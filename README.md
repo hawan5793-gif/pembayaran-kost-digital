@@ -7,6 +7,22 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## Yani Kost setup
+
+After configuring `.env` and the database connection, install dependencies and run migrations:
+
+```sh
+composer install --no-dev --optimize-autoloader
+php artisan migrate --force
+php artisan app:create-owner
+```
+
+The owner account is created from the terminal; public registration is disabled. The command asks for a name, email, and a password of at least 12 characters.
+
+`php artisan db:seed` does not insert sample rental data. Add rooms and tenants through the application. Keep database backups before applying migrations. The rental-record migration adds a unique tenant/month payment constraint; check and resolve any duplicate tenant/month payment records before applying it to an existing database.
+
+For a production server, set `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL` to the HTTPS site URL, `APP_TIMEZONE=Asia/Jakarta`, and `SESSION_SECURE_COOKIE=true`. Generate a unique `APP_KEY` on that server with `php artisan key:generate --force`, point the web server document root at Laravel's `public` directory, and configure HTTPS and database backups before entering live tenant or payment data. Do not deploy the development `.env` file.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

@@ -5,12 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\Payment;
 use App\Models\Room;
 use App\Models\Tenant;
+use App\Services\TenantBillingService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class DashboardController extends Controller
 {
     private function getCommonData()
     {
+        app(TenantBillingService::class)->accrueThroughCurrentMonth();
+
         $today = now()->locale('id');
         $currentMonthPeriod = $today->isoFormat('MMM YYYY');
         $currentMonthName = $today->isoFormat('MMMM');
@@ -35,7 +42,10 @@ class DashboardController extends Controller
         $unpaidTenants = $tenants->where('status', 'belum_bayar')->sortByDesc('unpaid_months')->values();
         $unpaidCount = $unpaidTenants->count();
 
-        $collectedThisMonth = Payment::where('month_period', $currentMonthPeriod)
+        $collectedThisMonth = Payment::whereBetween('payment_date', [
+                $today->copy()->startOfMonth()->toDateString(),
+                $today->copy()->endOfMonth()->toDateString(),
+            ])
             ->where('status', 'Lunas')
             ->sum('amount');
 
@@ -170,50 +180,110 @@ class DashboardController extends Controller
 
     public function storePayment(Request $request)
     {
+        app(TenantBillingService::class)->accrueThroughCurrentMonth();
+
+        $periodOptions = collect(range(-11, 2))
+            ->map(fn ($offset) => now()->locale('id')->addMonths($offset)->isoFormat('MMM YYYY'))
+            ->values();
+
         $validated = $request->validate([
             'tenant_id' => 'required|exists:tenants,id',
-            'amount' => 'required|numeric|min:0',
-            'month_period' => 'required|string',
-            'payment_date' => 'required|date',
+            'amount' => 'required|numeric|decimal:0,2|min:0.01|max:9999999999.99',
+            'month_period' => ['required', 'string', Rule::in($periodOptions)],
+            'payment_date' => 'required|date|before_or_equal:today',
             'method' => 'required|in:Tunai,Transfer',
-            'note' => 'nullable|string',
+            'note' => 'nullable|string|max:255',
         ]);
 
-        $tenant = Tenant::findOrFail($validated['tenant_id']);
-        $alreadyPaid = Payment::where('tenant_id', $tenant->id)
-            ->where('month_period', $validated['month_period'])
-            ->where('status', 'Lunas')
-            ->exists();
+        $currentPeriodIndex = 11;
+        $selectedPeriodIndex = $periodOptions->search($validated['month_period']);
+        $isCurrentOrPastPeriod = $selectedPeriodIndex <= $currentPeriodIndex;
 
-        if ($alreadyPaid) {
-            $message = "{$tenant->name} sudah membayar periode {$validated['month_period']}.";
-            if ($request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => $message], 422);
+        $result = DB::transaction(function () use ($request, $validated, $periodOptions, $selectedPeriodIndex, $currentPeriodIndex, $isCurrentOrPastPeriod) {
+            $tenant = Tenant::with('room')->lockForUpdate()->findOrFail($validated['tenant_id']);
+            $monthlyPriceCents = (int) round(((float) ($tenant->price ?? $tenant->room?->price ?? 0)) * 100);
+            $amountCents = (int) round(((float) $validated['amount']) * 100);
+
+            if ($monthlyPriceCents < 1 || $amountCents < $monthlyPriceCents || $amountCents % $monthlyPriceCents !== 0) {
+                throw ValidationException::withMessages([
+                    'amount' => 'Nominal harus sama dengan satu atau beberapa bulan sewa penuh.',
+                ]);
             }
-            return back()->withErrors(['month_period' => $message])->withInput();
-        }
 
-        $validated['room_id'] = $tenant->room_id;
-        $validated['status'] = 'Lunas';
+            $monthsCovered = intdiv($amountCents, $monthlyPriceCents);
+            $maximumMonths = $isCurrentOrPastPeriod ? max(1, (int) $tenant->unpaid_months) : 1;
 
-        $payment = Payment::create($validated);
-
-        if ($validated['month_period'] === now()->locale('id')->isoFormat('MMM YYYY') && $tenant->unpaid_months > 0) {
-            $tenant->decrement('unpaid_months');
-            if ($tenant->unpaid_months === 0) {
-                $tenant->update(['status' => 'lunas']);
+            if ($monthsCovered > $maximumMonths) {
+                throw ValidationException::withMessages([
+                    'amount' => 'Nominal melebihi jumlah bulan yang dapat dibayar untuk periode ini.',
+                ]);
             }
-        }
 
-        if ($request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Pembayaran berhasil disimpan',
-                'payment' => $payment
-            ]);
-        }
+            $paidPeriods = Payment::query()
+                ->where('tenant_id', $tenant->id)
+                ->where('status', 'Lunas')
+                ->pluck('month_period')
+                ->flip();
+            if ($paidPeriods->has($validated['month_period'])) {
+                throw ValidationException::withMessages([
+                    'month_period' => "{$tenant->name} sudah membayar periode {$validated['month_period']}.",
+                ]);
+            }
 
-        return redirect()->route('payments.index')->with('success', 'Pembayaran berhasil disimpan!');
+            $firstPeriod = now()->startOfMonth()->addMonths($selectedPeriodIndex - $currentPeriodIndex);
+            $periodsToRecord = collect();
+
+            if ($isCurrentOrPastPeriod) {
+                $entryMonth = $tenant->entry_date
+                    ? Carbon::parse($tenant->entry_date)->startOfMonth()
+                    : $firstPeriod->copy()->subMonths(max(0, (int) $tenant->unpaid_months - 1));
+                $candidateMonth = $entryMonth->copy();
+                $availablePeriods = collect();
+
+                while ($candidateMonth->lessThanOrEqualTo($firstPeriod)) {
+                    $period = $candidateMonth->copy()->locale('id')->isoFormat('MMM YYYY');
+                    if (! $paidPeriods->has($period)) {
+                        $availablePeriods->push($period);
+                    }
+                    $candidateMonth->addMonthNoOverflow();
+                }
+                $periodsToRecord = $availablePeriods->take(-$monthsCovered)->values();
+            } else {
+                $periodsToRecord->push($validated['month_period']);
+            }
+
+            if ($periodsToRecord->count() !== $monthsCovered) {
+                throw ValidationException::withMessages([
+                    'month_period' => 'Periode yang dipilih tidak memiliki cukup bulan sewa yang belum dibayar.',
+                ]);
+            }
+
+            $payments = $periodsToRecord->map(fn (string $period) => Payment::create([
+                ...$validated,
+                'amount' => $monthlyPriceCents / 100,
+                'month_period' => $period,
+                'room_id' => $tenant->room_id,
+                'status' => 'Lunas',
+            ]));
+
+            if ($isCurrentOrPastPeriod && $tenant->unpaid_months > 0) {
+                $remainingMonths = max(0, (int) $tenant->unpaid_months - $monthsCovered);
+                $tenant->update([
+                    'unpaid_months' => $remainingMonths,
+                    'status' => $remainingMonths > 0 ? 'belum_bayar' : 'lunas',
+                ]);
+            }
+
+            return $request->wantsJson()
+                ? response()->json([
+                    'success' => true,
+                    'message' => 'Pembayaran berhasil disimpan',
+                    'payments' => $payments,
+                ])
+                : redirect()->route('payments.index')->with('success', 'Pembayaran berhasil disimpan!');
+        });
+
+        return $result;
     }
 
     public function storeTenant(Request $request)
@@ -222,28 +292,31 @@ class DashboardController extends Controller
             'name' => 'required|string|max:100',
             'phone' => 'required|string|max:25',
             'room_number' => 'required|string|max:20',
-            'price' => 'required|numeric|min:0',
-            'entry_date' => 'required|date',
+            'price' => 'required|numeric|decimal:0,2|min:0.01|max:9999999999.99',
+            'entry_date' => ['required', 'date', 'before_or_equal:today'],
         ]);
 
-        $room = Room::firstOrCreate(
-            ['number' => $validated['room_number']],
-            ['price' => $validated['price'], 'status' => 'terisi']
-        );
-        if ($room->status !== 'terisi') {
-            $room->update(['status' => 'terisi']);
-        }
+        $tenant = DB::transaction(function () use ($validated) {
+            $room = Room::firstOrCreate(
+                ['number' => $validated['room_number']],
+                ['price' => $validated['price'], 'status' => 'terisi']
+            );
+            if ($room->status !== 'terisi') {
+                $room->update(['status' => 'terisi']);
+            }
 
-        $tenant = Tenant::create([
-            'room_id' => $room->id,
-            'price' => $validated['price'],
-            'name' => $validated['name'],
-            'phone' => $validated['phone'],
-            'entry_date' => $validated['entry_date'],
-            'due_date' => date('Y-m-d', strtotime('+1 month', strtotime($validated['entry_date']))),
-            'unpaid_months' => 1,
-            'status' => 'belum_bayar',
-        ]);
+            return Tenant::create([
+                'room_id' => $room->id,
+                'price' => $validated['price'],
+                'name' => $validated['name'],
+                'phone' => $validated['phone'],
+                'entry_date' => $validated['entry_date'],
+                'due_date' => Carbon::parse($validated['entry_date'])->addMonthNoOverflow()->toDateString(),
+                'last_billed_at' => Carbon::parse($validated['entry_date'])->startOfMonth()->toDateString(),
+                'unpaid_months' => 1,
+                'status' => 'belum_bayar',
+            ]);
+        });
 
         if ($request->wantsJson()) {
             return response()->json([

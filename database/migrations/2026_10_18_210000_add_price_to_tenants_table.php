@@ -14,8 +14,10 @@ return new class extends Migration
         });
 
         DB::table('tenants')
-            ->join('rooms', 'tenants.room_id', '=', 'rooms.id')
-            ->update(['tenants.price' => DB::raw('rooms.price')]);
+            ->whereNull('price')
+            ->update([
+                'price' => DB::raw('(SELECT rooms.price FROM rooms WHERE rooms.id = tenants.room_id)'),
+            ]);
     }
 
     public function down(): void

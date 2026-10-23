@@ -13,6 +13,58 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Custom Modern Mobile CSS -->
     <link rel="stylesheet" href="{{ asset('mobile-app.css') }}?v=11">
+    <style>
+        @media print {
+            @page {
+                margin: 0;
+            }
+
+            body {
+                margin: 0;
+                background: #ffffff !important;
+            }
+
+            /* Saat print, tampilkan hanya modal kuitansi/struk. */
+            body > * {
+                display: none !important;
+            }
+
+            body > #modalReceipt {
+                display: block !important;
+                position: static !important;
+                inset: auto !important;
+                width: 100% !important;
+                min-height: 0 !important;
+                padding: 0 !important;
+                background: transparent !important;
+            }
+
+            #modalReceipt .modal-bottom-sheet {
+                position: static !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                transform: none !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+            }
+
+            #modalReceipt .sheet-drag-bar,
+            #modalReceipt .close-sheet-btn,
+            #modalReceipt > .modal-bottom-sheet > .btn-primary-action {
+                display: none !important;
+            }
+
+            #modalReceipt .ticket-boarding-pass {
+                width: 100% !important;
+                max-width: 420px !important;
+                margin: 0 auto !important;
+                box-shadow: none !important;
+                break-inside: avoid;
+            }
+        }
+    </style>
 </head>
 <body>
 

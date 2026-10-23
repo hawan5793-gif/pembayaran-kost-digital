@@ -25,7 +25,9 @@ class DashboardController extends Controller
         $currentYear = $today->year;
         $todayDate = $today->toDateString();
         $todayDisplay = $today->isoFormat('D MMM YYYY');
-        $monthOptions = collect(range(-11, 2))
+        // Include the previous October while keeping the picker focused on
+        // recent periods, rather than starting two years back.
+        $monthOptions = collect(range(-13, 2))
             ->map(fn ($monthsAhead) => $today->copy()->addMonths($monthsAhead)->isoFormat('MMM YYYY'))
             ->all();
 
@@ -182,7 +184,7 @@ class DashboardController extends Controller
     {
         app(TenantBillingService::class)->accrueThroughCurrentMonth();
 
-        $periodOptions = collect(range(-11, 2))
+        $periodOptions = collect(range(-13, 2))
             ->map(fn ($offset) => now()->locale('id')->addMonths($offset)->isoFormat('MMM YYYY'))
             ->values();
 
@@ -195,7 +197,7 @@ class DashboardController extends Controller
             'note' => 'nullable|string|max:255',
         ]);
 
-        $currentPeriodIndex = 11;
+        $currentPeriodIndex = 13;
         $selectedPeriodIndex = $periodOptions->search($validated['month_period']);
         $isCurrentOrPastPeriod = $selectedPeriodIndex <= $currentPeriodIndex;
 

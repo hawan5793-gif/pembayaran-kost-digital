@@ -16,11 +16,14 @@
     <style>
         @media print {
             @page {
+                size: 80mm auto;
                 margin: 0;
             }
 
+            html,
             body {
                 margin: 0;
+                width: 80mm;
                 background: #ffffff !important;
             }
 
@@ -32,8 +35,7 @@
             body > #modalReceipt {
                 display: block !important;
                 position: static !important;
-                inset: auto !important;
-                width: 100% !important;
+                width: 80mm !important;
                 min-height: 0 !important;
                 padding: 0 !important;
                 background: transparent !important;
@@ -41,8 +43,8 @@
 
             #modalReceipt .modal-bottom-sheet {
                 position: static !important;
-                width: 100% !important;
-                max-width: 100% !important;
+                width: 80mm !important;
+                max-width: 80mm !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 transform: none !important;
@@ -57,8 +59,8 @@
             }
 
             #modalReceipt .ticket-boarding-pass {
-                width: 100% !important;
-                max-width: 420px !important;
+                width: 72mm !important;
+                max-width: 72mm !important;
                 margin: 0 auto !important;
                 box-shadow: none !important;
                 break-inside: avoid;
